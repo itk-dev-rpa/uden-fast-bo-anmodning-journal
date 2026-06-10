@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   og implementeres som RPA.
 - `local_debug.py` + `.env.example`: lokalt debug-setup der kører processen direkte
   mod en test-OpenOrchestrator (uden retry-loop og fejl-screenshots).
+- `debug_parse_eml.py` + eksempel-mail: offline-test af mail-filter og CPR-udtræk
+  fra en gemt `.eml`-fil (uden netværk/Nova/Graph).
 
 ### Kendte mangler
 
