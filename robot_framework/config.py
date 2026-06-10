@@ -34,7 +34,7 @@ MAX_TASK_COUNT = 100
 
 # Mailbox that holds the source folder. The robot authenticates with the Graph
 # credential and reads this user's mailbox.
-MAILBOX = "itk-rpa@ba.aarhus.dk"
+MAILBOX = "folkeregister@aarhus.dk"
 
 # Outlook folders (paths relative to the mailbox root).
 SOURCE_FOLDER = "Selvbetjening UA og UFB"
