@@ -45,8 +45,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     emails = graph_mail.get_emails_from_folder(config.MAILBOX, config.SOURCE_FOLDER, graph_access)
     emails = _filter_emails(emails)
-    # Process the oldest mail first (received_time is an ISO 8601 string, so a
-    # lexicographic sort is also chronological).
     emails = sorted(emails, key=lambda email: email.received_time)
 
     if not emails:
