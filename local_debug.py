@@ -21,13 +21,15 @@ def main() -> None:
     """Build a connection from the .env file and run the process once."""
     load_dotenv()
 
+    # trigger_id and job_id must be valid UUID strings or None. OpenOrchestrator
+    # calls UUID() on them when logging, so empty strings are coerced to None.
     orchestrator_connection = OrchestratorConnection(
         os.environ["OO_PROCESS_NAME"],
         os.environ["OO_CONNECTION_STRING"],
         os.environ["OO_CRYPTO_KEY"],
         os.getenv("OO_PROCESS_ARGS", ""),
-        os.getenv("OO_TRIGGER_ID", "debug-trigger"),
-        os.getenv("OO_JOB_ID", "debug-job"),
+        os.getenv("OO_TRIGGER_ID") or None,
+        os.getenv("OO_JOB_ID") or None,
     )
 
     initialize.initialize(orchestrator_connection)
