@@ -34,6 +34,10 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     """Do the primary process of the robot."""
     orchestrator_connection.log_trace("Running process.")
 
+    dry_run, max_mails = _parse_run_args(orchestrator_connection.process_arguments)
+    if dry_run:
+        orchestrator_connection.log_info("DRY-RUN: no changes will be made.")
+
     nova_access = _get_nova_access(orchestrator_connection)
     graph_access = _get_graph_access(orchestrator_connection)
     caseworker = Caseworker(
@@ -46,6 +50,8 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     emails = graph_mail.get_emails_from_folder(config.MAILBOX, config.SOURCE_FOLDER, graph_access)
     emails = _filter_emails(emails)
     emails = sorted(emails, key=lambda email: email.received_time)
+    if max_mails is not None:
+        emails = emails[:max_mails]
 
     if not emails:
         orchestrator_connection.log_info("No 'Uden fast bopæl' mails to journalize. Stopping.")
@@ -54,11 +60,24 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     orchestrator_connection.log_info(f"Found {len(emails)} mail(s) to journalize.")
 
     for email in emails:
-        _handle_email(email, caseworker, nova_access, graph_access, orchestrator_connection)
+        _handle_email(email, caseworker, nova_access, graph_access, orchestrator_connection, dry_run=dry_run)
+
+
+def _parse_run_args(process_arguments: str | None) -> tuple[bool, int | None]:
+    """Read dry_run and max_mails from the process arguments JSON.
+
+    Falls back to production defaults (live run, no limit) on empty or invalid input.
+    """
+    try:
+        args = json.loads(process_arguments) if process_arguments else {}
+    except json.JSONDecodeError:
+        args = {}
+    return bool(args.get("dry_run", False)), args.get("max_mails")
 
 
 def _handle_email(email: graph_mail.Email, caseworker: Caseworker, nova_access: NovaAccess,
-                  graph_access: GraphAccess, orchestrator_connection: OrchestratorConnection) -> None:
+                  graph_access: GraphAccess, orchestrator_connection: OrchestratorConnection,
+                  *, dry_run: bool = False) -> None:
     """Create a case, journalize the mail, create a task and move the mail.
 
     Note: the steps are not transactional. If a step after case creation fails,
@@ -66,6 +85,10 @@ def _handle_email(email: graph_mail.Email, caseworker: Caseworker, nova_access: 
     new case) but is worth keeping in mind.
     """
     cpr = _extract_cpr(email)
+
+    if dry_run:
+        _report_dry_run(email, cpr, nova_access, orchestrator_connection)
+        return
 
     orchestrator_connection.log_trace("Creating case in KMD Nova.")
     case = _create_case(cpr, caseworker, nova_access)
@@ -78,6 +101,21 @@ def _handle_email(email: graph_mail.Email, caseworker: Caseworker, nova_access: 
 
     orchestrator_connection.log_trace("Moving mail to done folder.")
     graph_mail.move_email(email, config.DONE_FOLDER, graph_access)
+
+
+def _report_dry_run(email: graph_mail.Email, cpr: str, nova_access: NovaAccess,
+                    orchestrator_connection: OrchestratorConnection) -> None:
+    """Log what would happen for a mail without making any changes.
+
+    Does a read-only Nova lookup to verify connectivity and that the citizen exists.
+    """
+    existing_cases = nova_cases.get_cases(nova_access, cpr=cpr)
+    orchestrator_connection.log_info(
+        f"DRY-RUN mail '{email.subject}': CPR found, {len(existing_cases)} existing Nova case(s). "
+        f"Would create case '{config.CASE_TITLE}' (KLE {config.KLE_NUMBER}), "
+        f"journalize the mail, create task '{config.TASK_TITLE}', "
+        f"and move the mail to '{config.DONE_FOLDER}'."
+    )
 
 
 def _get_nova_access(orchestrator_connection: OrchestratorConnection) -> NovaAccess:

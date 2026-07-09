@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   mod en test-OpenOrchestrator (uden retry-loop og fejl-screenshots).
 - `debug_parse_eml.py` + eksempel-mail: offline-test af mail-filter og CPR-udtræk
   fra en gemt `.eml`-fil (uden netværk/Nova/Graph).
+- Dry-run-tilstand styret via process arguments (`{"dry_run": true}`) samt en
+  `max_mails`-grænse, så robotten kan testes mod produktion uden at oprette sager
+  eller flytte mails.
 
 ### Kendte mangler
 
