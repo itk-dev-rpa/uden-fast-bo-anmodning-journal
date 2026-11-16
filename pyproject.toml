@@ -9,7 +9,7 @@ authors = [
   { name="ITK Development", email="itk-rpa@mkb.aarhus.dk" },
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = "==3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -18,8 +18,7 @@ classifiers = [
 dependencies = [
     "OpenOrchestrator == 3.*",
     "Pillow == 10.*",
-    "itk-dev-shared-components == 2.*",
-    "python-dotenv == 1.*",
+    "itk-dev-shared-components == 2.*"
 ]
 
 [project.optional-dependencies]

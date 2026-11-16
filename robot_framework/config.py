@@ -1,5 +1,7 @@
 """This module contains configuration constants used across the framework"""
 
+from itk_dev_shared_components.kmd_nova.nova_objects import Caseworker, Department
+
 # The number of times the robot retries on an error before terminating.
 MAX_RETRY_COUNT = 3
 
@@ -16,35 +18,11 @@ ERROR_EMAIL = "Error Email"
 NOVA_API = "Nova API"
 GRAPH_API = "Graph API"
 
-
-# Queue specific configs
-# ----------------------
-
-# The name of the job queue (if any)
-QUEUE_NAME = None
-
-# The limit on how many queue elements to process
-MAX_TASK_COUNT = 100
-
-# ----------------------
-
-
-# Process specific configs
-# ----------------------
-
-# Mailbox that holds the source folder. The robot authenticates with the Graph
-# credential and reads this user's mailbox.
 MAILBOX = "folkeregister@aarhus.dk"
-
-# Outlook folders (paths relative to the mailbox root).
 SOURCE_FOLDER = "Selvbetjening UA og UFB"
 DONE_FOLDER = "Slettetmappen 6"
 
-# Only mails from this sender should be journalized (PDD step 5).
 VALID_SENDER = "selvbetjening.aarhuskommune.dk"
-
-# The "Selvbetjening UA og UFB" folder also holds UA mails, so the subject is
-# used to pick out the "Uden fast bopæl" (UFB) mails.
 VALID_SUBJECTS = (
     "Uden fast bopæl i en midlertidig periode (fra Selvbetjening.aarhuskommune.dk)",
     "Webform submission from: Without permanent residence",
@@ -52,36 +30,36 @@ VALID_SUBJECTS = (
 
 # KMD Nova case settings.
 CASE_TITLE = "Folkeregistrering i almindelighed"
-KLE_NUMBER = "23.05.00"
+KLE_NUMBER = "23.05.00"  # TODO: 23.05.23?
 PROCEEDING_FACET = "G01"
 CASE_SENSITIVITY = "Følsomme"
 
-# Department that is responsible for the case (4BFOLKEREG Folkeregister og Sygesikring).
-RESPONSIBLE_DEPARTMENT_ID = 70403
-RESPONSIBLE_DEPARTMENT_NAME = "Folkeregister og Sygesikring"
-RESPONSIBLE_DEPARTMENT_USER_KEY = "4BFOLKEREG"
+RESPONSIBLE_DEPARTMENT = Department(
+    id=70403,
+    name="Folkeregister og Sygesikring",
+    user_key="4BFOLKEREG",
+)
 
-# Security unit for the case and documents (4BBORGER Borgerservice).
-SECURITY_UNIT_ID = 818485
-SECURITY_UNIT_NAME = "Borgerservice"
-SECURITY_UNIT_USER_KEY = "4BBORGER"
+SECURITY_UNIT = Department(
+    id=818485,
+    name="Borgerservice",
+    user_key="4BBORGER",
+)
 
 # Caseworker the robot acts as / assigns the task to. Temporary robot account
 # until the dedicated caseworker account (RITM0283472) is ready.
-CASEWORKER_NAME = "AZRPA78 - Rpabruger Rpa78 - MÅ IKKE SLETTES RITM0283472"
-CASEWORKER_IDENT = "AZRPA78"
-CASEWORKER_UUID = "a577c0a2-a131-43a5-b4e6-b4f5bb75028f"
-CASEWORKER_TYPE = "group"
+CASEWORKER = Caseworker(
+    name="AZRPA78 - Rpabruger Rpa78 - MÅ IKKE SLETTES RITM0283472",
+    ident="AZRPA78",
+    uuid="a577c0a2-a131-43a5-b4e6-b4f5bb75028f",
+    type="user",
+)
 
-# Document settings (PDD step 16: type 'Indgående', category 'Ansøgning').
 DOCUMENT_TYPE = "Indgående"
 DOCUMENT_SENSITIVITY = "Følsomme"
 # Nova only accepts the category by UUID, not by name.
 # TODO: Get the category UUID for "Ansøgning" from fagperson and insert it here.
 DOCUMENT_CATEGORY_NAME = "Ansøgning"
-DOCUMENT_CATEGORY_UUID = None
+DOCUMENT_CATEGORY_UUID = "0292ea5d-616c-44e8-9469-af7b7b546ec8"
 
-# Task settings (PDD step 19).
 TASK_TITLE = "Uden fast bopæl i en midlertidig periode (fra Selvbetjening.aarhuskommune.dk)"
-
-# ----------------------

@@ -62,22 +62,13 @@ In production the robot is started by OpenOrchestrator, which runs `main.py`. Th
 working directory, sets up a virtual environment with `uv`, and runs `python -m robot_framework`
 with the connection arguments from the Scheduler.
 
-### Process arguments
-
-The robot accepts an optional JSON object as its process arguments:
-
-| Key | Type | Default | Effect |
-|-----|------|---------|--------|
-| `dry_run` | bool | `false` | If `true`, make no changes: only read-only Nova lookups and logging of intended actions. |
-| `max_mails` | int | no limit | Process at most this many mails. |
-
 ## Local development and debugging
 
 1. Create the environment: `uv venv --python 3.11` then `uv pip install -e ".[dev]"`.
 2. Copy `.env.example` to `.env` and fill in the OpenOrchestrator connection settings.
 3. Debug with the VS Code launch configs (or run the scripts directly):
    - **`local_debug.py`** – runs the process once against the connection in `.env`, bypassing the
-     retry loop and error screenshots. Set `OO_PROCESS_ARGS={"dry_run": true}` to test safely.
+     retry loop and error screenshots.
    - **`debug_parse_eml.py`** – parses a saved `.eml` file and runs the sender/subject filter and
      CPR extraction offline, with no network, Nova or Graph access.
 
@@ -87,11 +78,8 @@ There is no test environment, so all testing hits production KMD Nova and the re
 in careful, staged steps:
 
 1. **Offline** – `debug_parse_eml.py` against saved `.eml` files (zero risk).
-2. **Dry-run** – `local_debug.py` with `{"dry_run": true}`: verifies the full chain (auth → read
-   mail → filter → CPR → read-only Nova lookup) without writing anything.
-3. **One live mail** – `{"dry_run": false, "max_mails": 1}`: create one real case and verify it in
-   KMD Nova, then confirm the mail moved to `Slettetmappen 6`.
-4. **Full run** – no `max_mails`, `dry_run` off.
+2. **Live run** – `local_debug.py`: processes every matching mail in the source folder. Verify the
+   created cases in KMD Nova and confirm the mails moved to `Slettetmappen 6`.
 
 ## Linting
 

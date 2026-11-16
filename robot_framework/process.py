@@ -11,12 +11,11 @@ import uuid
 from datetime import datetime
 
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
-from OpenOrchestrator.database.queues import QueueElement
 
 from itk_dev_shared_components.kmd_nova.authentication import NovaAccess
 from itk_dev_shared_components.kmd_nova import nova_cases, nova_documents, nova_tasks
 from itk_dev_shared_components.kmd_nova.nova_objects import (
-    NovaCase, CaseParty, Caseworker, Department, Document, Task,
+    NovaCase, CaseParty, Document, Task,
 )
 from itk_dev_shared_components.graph import authentication as graph_authentication
 from itk_dev_shared_components.graph import mail as graph_mail
@@ -29,29 +28,21 @@ from robot_framework.exceptions import BusinessError
 CPR_PATTERN = re.compile(r"\b(\d{6}-?\d{4})\b")
 
 
-# pylint: disable-next=unused-argument
-def process(orchestrator_connection: OrchestratorConnection, queue_element: QueueElement | None = None) -> None:
+def process(orchestrator_connection: OrchestratorConnection) -> None:
     """Do the primary process of the robot."""
     orchestrator_connection.log_trace("Running process.")
 
-    dry_run, max_mails = _parse_run_args(orchestrator_connection.process_arguments)
-    if dry_run:
-        orchestrator_connection.log_info("DRY-RUN: no changes will be made.")
+    nova_credential = orchestrator_connection.get_credential(config.NOVA_API)
+    nova_access = NovaAccess(client_id=nova_credential.username, client_secret=nova_credential.password)
 
-    nova_access = _get_nova_access(orchestrator_connection)
-    graph_access = _get_graph_access(orchestrator_connection)
-    caseworker = Caseworker(
-        uuid=config.CASEWORKER_UUID,
-        name=config.CASEWORKER_NAME,
-        ident=config.CASEWORKER_IDENT,
-        type=config.CASEWORKER_TYPE,
+    graph_credential = orchestrator_connection.get_credential(config.GRAPH_API)
+    graph_access = graph_authentication.authorize_by_username_password(
+        graph_credential.username, **json.loads(graph_credential.password)
     )
 
     emails = graph_mail.get_emails_from_folder(config.MAILBOX, config.SOURCE_FOLDER, graph_access)
     emails = _filter_emails(emails)
     emails = sorted(emails, key=lambda email: email.received_time)
-    if max_mails is not None:
-        emails = emails[:max_mails]
 
     if not emails:
         orchestrator_connection.log_info("No 'Uden fast bopæl' mails to journalize. Stopping.")
@@ -60,24 +51,11 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     orchestrator_connection.log_info(f"Found {len(emails)} mail(s) to journalize.")
 
     for email in emails:
-        _handle_email(email, caseworker, nova_access, graph_access, orchestrator_connection, dry_run=dry_run)
+        _handle_email(email, nova_access, graph_access, orchestrator_connection)
 
 
-def _parse_run_args(process_arguments: str | None) -> tuple[bool, int | None]:
-    """Read dry_run and max_mails from the process arguments JSON.
-
-    Falls back to production defaults (live run, no limit) on empty or invalid input.
-    """
-    try:
-        args = json.loads(process_arguments) if process_arguments else {}
-    except json.JSONDecodeError:
-        args = {}
-    return bool(args.get("dry_run", False)), args.get("max_mails")
-
-
-def _handle_email(email: graph_mail.Email, caseworker: Caseworker, nova_access: NovaAccess,
-                  graph_access: GraphAccess, orchestrator_connection: OrchestratorConnection,
-                  *, dry_run: bool = False) -> None:
+def _handle_email(email: graph_mail.Email, nova_access: NovaAccess, graph_access: GraphAccess,
+                  orchestrator_connection: OrchestratorConnection) -> None:
     """Create a case, journalize the mail, create a task and move the mail.
 
     Note: the steps are not transactional. If a step after case creation fails,
@@ -86,52 +64,17 @@ def _handle_email(email: graph_mail.Email, caseworker: Caseworker, nova_access: 
     """
     cpr = _extract_cpr(email)
 
-    if dry_run:
-        _report_dry_run(email, cpr, nova_access, orchestrator_connection)
-        return
-
     orchestrator_connection.log_trace("Creating case in KMD Nova.")
-    case = _create_case(cpr, caseworker, nova_access)
+    case = _create_case(cpr, nova_access)
 
     orchestrator_connection.log_trace("Journalizing mail on case.")
-    _journalize_mail(email, case, caseworker, nova_access, graph_access)
+    _journalize_mail(email, case, nova_access, graph_access)
 
     orchestrator_connection.log_trace("Creating task on case.")
-    _create_task(case, caseworker, nova_access)
+    _create_task(case, nova_access)
 
     orchestrator_connection.log_trace("Moving mail to done folder.")
     graph_mail.move_email(email, config.DONE_FOLDER, graph_access)
-
-
-def _report_dry_run(email: graph_mail.Email, cpr: str, nova_access: NovaAccess,
-                    orchestrator_connection: OrchestratorConnection) -> None:
-    """Log what would happen for a mail without making any changes.
-
-    Does a read-only Nova lookup to verify connectivity and that the citizen exists.
-    """
-    existing_cases = nova_cases.get_cases(nova_access, cpr=cpr)
-    orchestrator_connection.log_info(
-        f"DRY-RUN mail '{email.subject}': CPR found, {len(existing_cases)} existing Nova case(s). "
-        f"Would create case '{config.CASE_TITLE}' (KLE {config.KLE_NUMBER}), "
-        f"journalize the mail, create task '{config.TASK_TITLE}', "
-        f"and move the mail to '{config.DONE_FOLDER}'."
-    )
-
-
-def _get_nova_access(orchestrator_connection: OrchestratorConnection) -> NovaAccess:
-    """Build a NovaAccess from the Nova API credential."""
-    credential = orchestrator_connection.get_credential(config.NOVA_API)
-    return NovaAccess(client_id=credential.username, client_secret=credential.password)
-
-
-def _get_graph_access(orchestrator_connection: OrchestratorConnection) -> GraphAccess:
-    """Build a GraphAccess from the Graph API credential.
-
-    The credential's password field is a JSON object holding password, client_id
-    and tenant_id, while the username field holds the login username.
-    """
-    credential = orchestrator_connection.get_credential(config.GRAPH_API)
-    return graph_authentication.authorize_by_username_password(credential.username, **json.loads(credential.password))
 
 
 def _filter_emails(emails: tuple[graph_mail.Email]) -> list[graph_mail.Email]:
@@ -158,35 +101,26 @@ def _extract_cpr(email: graph_mail.Email) -> str:
     return match.group(1).replace("-", "")
 
 
-def _create_case(cpr: str, caseworker: Caseworker, nova_access: NovaAccess) -> NovaCase:
+def _create_case(cpr: str, nova_access: NovaAccess) -> NovaCase:
     """Create and add a 'Folkeregistrering i almindelighed' case for the citizen."""
     case = NovaCase(
         uuid=str(uuid.uuid4()),
         title=config.CASE_TITLE,
         case_date=datetime.now(),
         progress_state="Opstaaet",
-        case_parties=[CaseParty(role="Primær", identification_type="CprNummer", identification=cpr)],
+        case_parties=[CaseParty(role="Primær", identification_type="CprNummer", identification=cpr, name="Test Test")],
         kle_number=config.KLE_NUMBER,
         proceeding_facet=config.PROCEEDING_FACET,
         sensitivity=config.CASE_SENSITIVITY,
-        caseworker=caseworker,
-        responsible_department=Department(
-            id=config.RESPONSIBLE_DEPARTMENT_ID,
-            name=config.RESPONSIBLE_DEPARTMENT_NAME,
-            user_key=config.RESPONSIBLE_DEPARTMENT_USER_KEY,
-        ),
-        security_unit=Department(
-            id=config.SECURITY_UNIT_ID,
-            name=config.SECURITY_UNIT_NAME,
-            user_key=config.SECURITY_UNIT_USER_KEY,
-        ),
+        caseworker=config.CASEWORKER,
+        responsible_department=config.RESPONSIBLE_DEPARTMENT,
+        security_unit=config.SECURITY_UNIT,
     )
     nova_cases.add_case(case, nova_access)
     return case
 
 
-def _journalize_mail(email: graph_mail.Email, case: NovaCase, caseworker: Caseworker,
-                     nova_access: NovaAccess, graph_access: GraphAccess) -> None:
+def _journalize_mail(email: graph_mail.Email, case: NovaCase, nova_access: NovaAccess, graph_access: GraphAccess) -> None:
     """Upload the mail as a document and attach it to the case."""
     mime = graph_mail.get_email_as_mime(email, graph_access)
     file_name = f"{_safe_file_name(email.subject)}.eml"
@@ -202,21 +136,21 @@ def _journalize_mail(email: graph_mail.Email, case: NovaCase, caseworker: Casewo
         category_name=config.DOCUMENT_CATEGORY_NAME,
         category_uuid=config.DOCUMENT_CATEGORY_UUID,
         file_extension="eml",
-        caseworker=caseworker,
+        caseworker=config.CASEWORKER,
     )
     nova_documents.attach_document_to_case(
         case.uuid, document, nova_access,
-        security_unit_id=config.SECURITY_UNIT_ID,
-        security_unit_name=config.SECURITY_UNIT_NAME,
+        security_unit_id=config.SECURITY_UNIT.id,
+        security_unit_name=config.SECURITY_UNIT.name,
     )
 
 
-def _create_task(case: NovaCase, caseworker: Caseworker, nova_access: NovaAccess) -> None:
+def _create_task(case: NovaCase, nova_access: NovaAccess) -> None:
     """Create a task on the case with today as the deadline."""
     task = Task(
         uuid=str(uuid.uuid4()),
         title=config.TASK_TITLE,
-        caseworker=caseworker,
+        caseworker=config.CASEWORKER,
         status_code="N",
         deadline=datetime.now(),
     )
@@ -227,3 +161,12 @@ def _safe_file_name(name: str) -> str:
     """Strip characters that are not allowed in file names."""
     cleaned = re.sub(r'[\\/:*?"<>|]', "_", name).strip()
     return cleaned or "dokument"
+
+
+if __name__ == '__main__':
+    import os
+    import uuid
+    conn_string = os.getenv("OpenOrchestratorConnString")
+    crypto_key = os.getenv("OpenOrchestratorKey")
+    oc = OrchestratorConnection("Uden fast bopæl", conn_string, crypto_key, '', "trigger_id", uuid.uuid4())
+    process(oc)
