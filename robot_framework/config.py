@@ -30,7 +30,7 @@ VALID_SUBJECTS = (
 
 # KMD Nova case settings.
 CASE_TITLE = "Folkeregistrering i almindelighed"
-KLE_NUMBER = "23.05.00"  # TODO: 23.05.23?
+KLE_NUMBER = "23.05.00"
 PROCEEDING_FACET = "G01"
 CASE_SENSITIVITY = "Følsomme"
 
@@ -46,19 +46,15 @@ SECURITY_UNIT = Department(
     user_key="4BBORGER",
 )
 
-# Caseworker the robot acts as / assigns the task to. Temporary robot account
-# until the dedicated caseworker account (RITM0283472) is ready.
-CASEWORKER = Caseworker(
+CASEWORKER = Caseworker(  # TODO
     name="AZRPA78 - Rpabruger Rpa78 - MÅ IKKE SLETTES RITM0283472",
     ident="AZRPA78",
-    uuid="a577c0a2-a131-43a5-b4e6-b4f5bb75028f",
+    uuid="203e17a1-0032-4f1d-be98-9386e4f2f336",
     type="user",
 )
 
 DOCUMENT_TYPE = "Indgående"
 DOCUMENT_SENSITIVITY = "Følsomme"
-# Nova only accepts the category by UUID, not by name.
-# TODO: Get the category UUID for "Ansøgning" from fagperson and insert it here.
 DOCUMENT_CATEGORY_NAME = "Ansøgning"
 DOCUMENT_CATEGORY_UUID = "0292ea5d-616c-44e8-9469-af7b7b546ec8"
 
