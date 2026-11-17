@@ -82,8 +82,8 @@ def _filter_emails(emails: tuple[graph_mail.Email]) -> list[graph_mail.Email]:
     """
     return [
         email for email in emails
-        if config.VALID_SENDER in email.sender.lower()
-        and email.subject.strip() in config.VALID_SUBJECTS
+        if config.VALID_SENDER == email.sender
+        and email.subject in config.VALID_SUBJECTS
     ]
 
 
