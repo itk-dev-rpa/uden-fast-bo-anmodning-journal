@@ -11,12 +11,9 @@ import uuid
 from datetime import datetime
 
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
-
 from itk_dev_shared_components.kmd_nova.authentication import NovaAccess
 from itk_dev_shared_components.kmd_nova import nova_cases, nova_documents, nova_tasks
-from itk_dev_shared_components.kmd_nova.nova_objects import (
-    NovaCase, CaseParty, Document, Task,
-)
+from itk_dev_shared_components.kmd_nova.nova_objects import NovaCase, CaseParty, Document, Task
 from itk_dev_shared_components.graph import authentication as graph_authentication
 from itk_dev_shared_components.graph import mail as graph_mail
 from itk_dev_shared_components.graph.authentication import GraphAccess
