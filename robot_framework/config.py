@@ -46,10 +46,10 @@ SECURITY_UNIT = Department(
     user_key="4BBORGER",
 )
 
-CASEWORKER = Caseworker(  # TODO
-    name="AZRPA78 - Rpabruger Rpa78 - MÅ IKKE SLETTES RITM0283472",
-    ident="AZRPA78",
-    uuid="203e17a1-0032-4f1d-be98-9386e4f2f336",
+CASEWORKER = Caseworker(
+    name="Rpabruger Rpa78 - MÅ IKKE SLETTES RITM0531920",
+    ident="AZRPAB1",
+    uuid="9c35b5a5-4f9a-410d-aba6-c42595890a76",
     type="user",
 )
 
