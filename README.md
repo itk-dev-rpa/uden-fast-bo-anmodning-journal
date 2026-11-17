@@ -11,4 +11,4 @@ Submissions are journalised to KMD Nova on a new case and a task is created on t
 ## Know issuses
 
 No known issues exists.
-Both API's are fairly stable.
+Both APIs are fairly stable.
