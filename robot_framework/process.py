@@ -162,7 +162,6 @@ def _safe_file_name(name: str) -> str:
 
 if __name__ == '__main__':
     import os
-    import uuid
     conn_string = os.getenv("OpenOrchestratorConnString")
     crypto_key = os.getenv("OpenOrchestratorKey")
     oc = OrchestratorConnection("Uden fast bopæl", conn_string, crypto_key, '', "trigger_id", uuid.uuid4())
