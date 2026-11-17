@@ -147,7 +147,7 @@ def _create_task(case: NovaCase, nova_access: NovaAccess) -> None:
     task = Task(
         uuid=str(uuid.uuid4()),
         title=config.TASK_TITLE,
-        caseworker=config.CASEWORKER,
+        caseworker=config.TASK_CASEWORKER,
         status_code="N",
         deadline=datetime.now(),
     )

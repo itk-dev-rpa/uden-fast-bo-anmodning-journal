@@ -53,6 +53,13 @@ CASEWORKER = Caseworker(
     type="user",
 )
 
+TASK_CASEWORKER = Caseworker(
+    ident=None,
+    name='Folkeregister og Sygesikring',
+    type='group',
+    uuid='2028acfc-2def-4215-be76-bf66b1849714'
+)
+
 DOCUMENT_TYPE = "Indgående"
 DOCUMENT_SENSITIVITY = "Følsomme"
 DOCUMENT_CATEGORY_NAME = "Ansøgning"
