@@ -4,20 +4,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robot_framework"
-version = "0.0.1"
+version = "1.0.0"
 authors = [
   { name="ITK Development", email="itk-rpa@mkb.aarhus.dk" },
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: Microsoft :: Windows",
 ]
 dependencies = [
-    "OpenOrchestrator == 2.*",
+    "OpenOrchestrator == 3.*",
     "Pillow == 10.*",
+    "itk-dev-shared-components == 2.*"
 ]
 
 [project.optional-dependencies]
