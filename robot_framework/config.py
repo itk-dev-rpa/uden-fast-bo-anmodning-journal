@@ -22,7 +22,7 @@ MAILBOX = "folkeregister@aarhus.dk"
 SOURCE_FOLDER = "Selvbetjening UA og UFB"
 DONE_FOLDER = "Slettetmappen 6"
 
-VALID_SENDER = "selvbetjening.aarhuskommune.dk"
+VALID_SENDER = "noreply@aarhus.dk"
 VALID_SUBJECTS = (
     "Uden fast bopæl i en midlertidig periode (fra Selvbetjening.aarhuskommune.dk)",
     "Webform submission from: Without permanent residence",
